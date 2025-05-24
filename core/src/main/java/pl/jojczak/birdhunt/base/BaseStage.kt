@@ -74,16 +74,19 @@ abstract class BaseStage(
             super.act(delta)
         } catch (e: NullPointerException) {
             Gdx.app.error("$TAG/$subClassName", "NullPointerException in act()", e)
-            super.getBatch().end()
+            safelyEndBatch()
         } catch (e: ArrayIndexOutOfBoundsException) {
             Gdx.app.error("$TAG/$subClassName", "ArrayIndexOutOfBoundsException in act()", e)
-            super.getBatch().end()
-        } catch (e: IllegalStateException) {
-            Gdx.app.error("$TAG/$subClassName", "IllegalStateException in act()", e)
-            super.getBatch().end()
+            safelyEndBatch()
         } catch (e: IndexOutOfBoundsException) {
             Gdx.app.error("$TAG/$subClassName", "IndexOutOfBoundsException in act()", e)
-            super.getBatch().end()
+            safelyEndBatch()
+        } catch (e: IllegalStateException) {
+            Gdx.app.error("$TAG/$subClassName", "IllegalStateException in act()", e)
+            safelyEndBatch()
+        } catch (e: Exception) {
+            Gdx.app.error("$TAG/$subClassName", "Unexpected exception in act()", e)
+            safelyEndBatch()
         }
     }
 
@@ -94,16 +97,29 @@ abstract class BaseStage(
             super.draw()
         } catch (e: NullPointerException) {
             Gdx.app.error("$TAG/$subClassName", "NullPointerException in draw()", e)
-            super.getBatch().end()
+            safelyEndBatch()
         } catch (e: ArrayIndexOutOfBoundsException) {
             Gdx.app.error("$TAG/$subClassName", "ArrayIndexOutOfBoundsException in draw()", e)
-            super.getBatch().end()
+            safelyEndBatch()
         } catch (e: IllegalStateException) {
             Gdx.app.error("$TAG/$subClassName", "IllegalStateException in draw()", e)
-            super.getBatch().end()
+            safelyEndBatch()
         } catch (e: IndexOutOfBoundsException) {
             Gdx.app.error("$TAG/$subClassName", "IndexOutOfBoundsException in draw()", e)
-            super.getBatch().end()
+            safelyEndBatch()
+        } catch (e: Exception) {
+            Gdx.app.error("$TAG/$subClassName", "Unexpected exception in act()", e)
+            safelyEndBatch()
+        }
+    }
+
+    private fun safelyEndBatch() {
+        try {
+            if (super.getBatch().isDrawing) {
+                super.getBatch().end()
+            }
+        } catch (e: Exception) {
+            Gdx.app.error("$TAG/$subClassName", "Exception during getBatch().end()", e)
         }
     }
 
