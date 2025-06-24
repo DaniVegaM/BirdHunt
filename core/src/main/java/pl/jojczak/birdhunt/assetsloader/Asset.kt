@@ -5,7 +5,7 @@ enum class Asset {
     UI_SKIN,
     UI_BULLET,
     UI_S_PEN,
-    TX_LOGO,
+
     TX_BIRD,
     TX_SCOPE,
     TX_SHOTGUN,
@@ -31,6 +31,7 @@ enum class Asset {
         const val FONT_SMALL_BORDERED = "GenericMobileSystemNuevo-55-bordered"
         const val FONT_MEDIUM = "GenericMobileSystemNuevo-85"
         const val FONT_MEDIUM_BORDERED = "GenericMobileSystemNuevo-85-bordered"
-        const val FONT_LARGE_BORDERED = "GenericMobileSystemNuevo-200-bordered"
+        const val FONT_BIG_BORDERED = "GenericMobileSystemNuevo-200-bordered"
+        const val FONT_LARGE_BORDERED = "GenericMobileSystemNuevo-200-bordered"  // Keeping for backward compatibility
     }
 }

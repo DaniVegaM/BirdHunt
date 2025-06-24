@@ -37,6 +37,10 @@ class PlayServicesHelperAndroidImpl(
         callback(null)
     }
 
+    override fun getGamerProfilePicture(callback: (ByteArray?) -> Unit) {
+        callback(null)
+    }
+
     private fun showToast(@StringRes message: Int) {
         Gdx.app.postRunnable {
             activity.runOnUiThread {

@@ -2,12 +2,7 @@ package pl.jojczak.birdhunt.screens.gameplay.stages.ui.actors
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.Pixmap
-import com.badlogic.gdx.graphics.PixmapIO
-import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.scenes.scene2d.Actor
 import com.badlogic.gdx.scenes.scene2d.ui.Cell
-import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
@@ -15,26 +10,27 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.ui.Window
 import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.I18NBundle
-import com.badlogic.gdx.utils.Scaling
 import pl.jojczak.birdhunt.assetsloader.Asset
-import pl.jojczak.birdhunt.assetsloader.AssetsLoader
 import pl.jojczak.birdhunt.base.BaseTable
-import pl.jojczak.birdhunt.os.helpers.osCoreHelper
+import pl.jojczak.birdhunt.os.helpers.PlayServicesHelper
 import pl.jojczak.birdhunt.os.helpers.playServicesHelperInstance
 import pl.jojczak.birdhunt.screens.gameplay.GameplayLogic
 import pl.jojczak.birdhunt.screens.gameplay.GameplayState
 import pl.jojczak.birdhunt.utils.ButtonListener
-import java.io.File
-import java.util.zip.Deflater
 
 class GameOverWindow(
     private val i18N: I18NBundle,
     skin: Skin,
     private val gameplayLogic: GameplayLogic
 ) : BaseTable(), GameplayLogic.FromActions {
-    private val gameLogo = Image(AssetsLoader.get<Texture>(Asset.TX_LOGO)).also { lA ->
-        lA.setScaling(Scaling.fit)
-        lA.align = Align.top
+    
+    private val titleLabel = Label(
+        "Bird Hunt by Daniel Vega", 
+        skin,
+        Asset.FONT_MEDIUM_BORDERED, 
+        Color.WHITE
+    ).also { tL ->
+        tL.setAlignment(Align.center)
     }
 
     private val gameOverLabel = Label("", skin, Asset.FONT_MEDIUM_BORDERED, Color.WHITE).apply {
@@ -52,8 +48,8 @@ class GameOverWindow(
     private val shareButton = ImageTextButton(i18N.get("bt_share"), skin, "share").apply {
         addListener(ButtonListener { _, _ ->
             Gdx.app.log(TAG, "Share button clicked")
-            val screenShotFile = takeAScreenshot()
-            osCoreHelper.shareAppWithScreenshot(screenShotFile)
+            // Simple share without screenshot for now
+            Gdx.net.openURI("https://birdhunt.app") // Share app URL
         })
     }
 
@@ -84,14 +80,20 @@ class GameOverWindow(
         clearChildren()
 
         if (vertical) {
-            add(gameLogo).adjustGameLogo().row()
+            add(titleLabel).adjustGameTitle().row()
             add(gameOverLabel).padTop(PAD).row()
             add(window).padTop(PAD).expandY().align(Align.top)
         } else {
-            add(gameLogo).adjustGameLogo().expand().uniformX()
+            add(titleLabel).adjustGameTitle().expand().uniformX()
             add(window)
             add(gameOverLabel).expandX().uniformX()
         }
+    }
+
+    private fun Cell<Label>.adjustGameTitle(): Cell<Label> {
+        width(TITLE_WIDTH)
+        height(TITLE_HEIGHT)
+        return this
     }
 
     override fun gameplayStateUpdate(state: GameplayState) {
@@ -99,65 +101,19 @@ class GameOverWindow(
             playServicesHelperInstance.getUserName {
                 val userName = it ?: DEF_PLAYER_NAME
 
-                var text = if (state.killedBirds < 2)
-                    i18N.format("game_over_text1a", userName, state.killedBirds)
-                else
-                    i18N.format("game_over_text1b", userName, state.killedBirds)
+                gameOverLabel.setText(i18N.format("game_over_score", userName, state.points))
 
-                text += "\n"
-
-                text += if (state.firedShots < 2)
-                    i18N.format("game_over_text2a", state.firedShots)
-                else
-                    i18N.format("game_over_text2b", state.firedShots)
-
-                text += "\n"
-
-                text += i18N.format("game_over_text3", state.points)
-
-                text += when (state) {
-                    is GameplayState.GameOver.OutOfTime -> i18N.get("game_over_text4a")
-                    is GameplayState.GameOver.OutOfAmmo -> i18N.get("game_over_text4b")
-                }
-
-                gameOverLabel.setText(text)
+                // Leaderboard update for points
+                playServicesHelperInstance.submitScore(state.points)
             }
-
-            fadeIn()
-        } else (
-            hide()
-        )
-    }
-
-    override fun restartGame() {
-        hide()
-    }
-
-    private fun <T : Actor> Cell<T>.adjustGameLogo(): Cell<T> {
-        return this
-            .prefSize(
-                gameLogo.drawable.minWidth * GAME_LOGO_SCALE,
-                gameLogo.drawable.minHeight * GAME_LOGO_SCALE
-            )
-            .align(Align.center or Align.top)
-    }
-
-    private fun takeAScreenshot(): File {
-        val pixmap = Pixmap.createFromFrameBuffer(0, 0, Gdx.graphics.width, Gdx.graphics.height)
-
-        val fileHandle = Gdx.files.external("screenshot.png")
-        PixmapIO.writePNG(fileHandle, pixmap, Deflater.DEFAULT_COMPRESSION, true)
-        pixmap.dispose()
-
-        return File(fileHandle.file().absolutePath)
+        }
     }
 
     companion object {
-        @Suppress("unused")
         private const val TAG = "GameOverWindow"
-
-        private const val PAD = 40f
+        private const val PAD = 20f
         private const val DEF_PLAYER_NAME = "Player"
-        private const val GAME_LOGO_SCALE = 3f
+        private const val TITLE_WIDTH = 300f
+        private const val TITLE_HEIGHT = 60f
     }
 }

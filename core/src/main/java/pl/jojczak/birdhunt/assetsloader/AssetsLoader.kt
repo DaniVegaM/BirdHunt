@@ -66,7 +66,7 @@ object AssetsLoader {
         Asset.UI_SKIN               to      Pair("jjPixelUI/JJPixelUI.json",    Skin::class.java),
         Asset.UI_BULLET             to      Pair("bullet_ui.png",               Texture::class.java),
         Asset.UI_S_PEN              to      Pair("spen_conn_icon.png",          Texture::class.java),
-        Asset.TX_LOGO               to      Pair("logo.png",                    Texture::class.java),
+
         Asset.TX_BIRD               to      Pair("bird.png",                    Texture::class.java),
         Asset.TX_SCOPE              to      Pair("scope.png",                   Texture::class.java),
         Asset.TX_SHOTGUN            to      Pair("shotgun.png",                 Texture::class.java),

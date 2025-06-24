@@ -3,15 +3,11 @@ package pl.jojczak.birdhunt.screens.mainmenu.stages
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.Input
 import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.Texture
-import com.badlogic.gdx.scenes.scene2d.ui.Image
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
-import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.utils.Align
-import com.badlogic.gdx.utils.Scaling
 import pl.jojczak.birdhunt.assetsloader.Asset
 import pl.jojczak.birdhunt.assetsloader.AssetsLoader
 import pl.jojczak.birdhunt.base.ScreenWithUIStage
@@ -21,8 +17,6 @@ import pl.jojczak.birdhunt.utils.DisabledButtonListener
 import pl.jojczak.birdhunt.utils.Preferences
 import pl.jojczak.birdhunt.utils.Preferences.PREF_HIGH_SCORE
 import pl.jojczak.birdhunt.utils.Preferences.PREF_PGS_AUTH
-import pl.jojczak.birdhunt.os.helpers.appVersion
-import pl.jojczak.birdhunt.os.helpers.osCoreHelper
 import pl.jojczak.birdhunt.os.helpers.playServicesHelperInstance
 
 class MainMenuStage : ScreenWithUIStage.ScreenStage() {
@@ -64,18 +58,12 @@ class MainMenuStage : ScreenWithUIStage.ScreenStage() {
         })
     }
 
-    private val feedbackButton = ImageButton(skin, "discuss").also { aB ->
-        aB.addListener(ButtonListener { _, _ ->
-            Gdx.app.log(TAG, "Share button clicked")
-            fadeOut { mainActionReceiver(MainAction.NavigateToFeedback) }
-        })
-    }
-
     private val leaderboardButton = ImageButton(skin, "gp_leaderboard").also { lB ->
         lB.addListener(DisabledButtonListener { _ ->
             Gdx.app.log(TAG, "Leaderboard button clicked")
             playServicesHelperInstance.showLeaderboard()
         })
+        lB.isVisible = false // Ocultar botón
     }
 
     private val achievementsButton = ImageButton(skin, "gp_achievements").also { lB ->
@@ -83,6 +71,7 @@ class MainMenuStage : ScreenWithUIStage.ScreenStage() {
             Gdx.app.log(TAG, "Achievements button clicked")
             playServicesHelperInstance.showAchievements()
         })
+        lB.isVisible = false // Ocultar botón
     }
 
     private val highScoreLabel = Label(
@@ -92,33 +81,13 @@ class MainMenuStage : ScreenWithUIStage.ScreenStage() {
         Color.WHITE
     )
 
-    private val infoLabel = Label(
-        i18N.format("main_menu_info", appVersion),
+    private val titleLabel = Label(
+        "Bird Hunt by Daniel Vega", 
         skin,
-        Asset.FONT_SMALL_BORDERED,
+        Asset.FONT_MEDIUM_BORDERED, 
         Color.WHITE
-    )
-
-    private val donateButton = ImageTextButton(i18N.get("main_menu_donate"), skin, "donate").also { sB ->
-        sB.addListener(ButtonListener { _, _ ->
-            Gdx.app.net.openURI(i18N.get("main_menu_donate_url"))
-            osCoreHelper.showToast(i18N.get("main_menu_donate_thx"))
-        })
-    }
-
-    private val authorTable = Table().also { aT ->
-        aT.setFillParent(true)
-        aT.bottom().left()
-        aT.add(infoLabel).expandX().fillX()
-        aT.add(donateButton).right()
-        aT.padLeft(ROW_PAD)
-        aT.padRight(ROW_PAD)
-        aT.padBottom(ROW_PAD_S)
-    }
-
-    private val logoActor = Image(AssetsLoader.get<Texture>(Asset.TX_LOGO)).also { lA ->
-        lA.setScaling(Scaling.fit)
-        lA.align = Align.top
+    ).also { tL ->
+        tL.setAlignment(Align.center)
     }
 
     private var currentTable: Table? = null
@@ -127,13 +96,20 @@ class MainMenuStage : ScreenWithUIStage.ScreenStage() {
         Gdx.app.log(TAG, "init MainMenuStage")
         Preferences.addListener(PREF_PGS_AUTH, pgsPreferenceListener)
         onPgsAuthChanged(Preferences.get(PREF_PGS_AUTH))
-        addActor(authorTable)
+        
+        // Initialize the table immediately
+        currentTable = if (viewport.worldHeight > viewport.worldWidth) {
+            orientationVertical = true
+            getVerticalTable()
+        } else {
+            orientationVertical = false
+            getHorizontalTable()
+        }
+        addActor(currentTable)
     }
 
     override fun onResize(scrWidth: Int, scrHeight: Int) {
         super.onResize(scrWidth, scrHeight)
-
-        if (logoActor == null) return
 
         if (viewport.worldHeight > viewport.worldWidth && orientationVertical != true) {
             Gdx.app.log(TAG, "Orientation changed to vertical")
@@ -141,7 +117,6 @@ class MainMenuStage : ScreenWithUIStage.ScreenStage() {
             currentTable?.remove()
             currentTable = getVerticalTable()
             addActor(currentTable)
-
         } else if (viewport.worldWidth > viewport.worldHeight && orientationVertical != false) {
             Gdx.app.log(TAG, "Orientation changed to horizontal")
             orientationVertical = false
@@ -155,22 +130,14 @@ class MainMenuStage : ScreenWithUIStage.ScreenStage() {
         cT.setFillParent(true)
         cT.center().top()
 
-        cT.add(logoActor).prefSize(
-            logoActor.drawable.minWidth * 5f,
-            logoActor.drawable.minHeight * 5f
-        ).expandX().align(Align.top)
+        cT.add(titleLabel).expandX().align(Align.top)
 
         cT.add().expandX()
 
         cT.add(Table().also { bT ->
             bT.add(startGameButton).padBottom(ROW_PAD).row()
             bT.add(aboutButton).padBottom(ROW_PAD).row()
-            bT.add(Table().also { gpT ->
-                gpT.add(settingsButton).padRight(ROW_PAD)
-                gpT.add(feedbackButton).padRight(ROW_PAD)
-                gpT.add(leaderboardButton).padRight(ROW_PAD)
-                gpT.add(achievementsButton)
-            }).padBottom(ROW_PAD).row()
+            bT.add(settingsButton).padBottom(ROW_PAD).row()
             bT.add(highScoreLabel).row()
             bT.add(penMouseSAdButton).padTop(ROW_PAD * 1.5f).row()
         }).expand().center().padRight(50f)
@@ -180,32 +147,22 @@ class MainMenuStage : ScreenWithUIStage.ScreenStage() {
         cT.setFillParent(true)
         cT.center().top()
 
-        cT.add(logoActor).prefSize(
-            logoActor.drawable.minWidth * 5f,
-            logoActor.drawable.minHeight * 5f
-        ).expandY().align(Align.top).row()
+        cT.add(titleLabel).expandX().align(Align.top)
+
+        cT.row()
 
         cT.add(Table().also { bT ->
-            bT.pad(ROW_PAD * 8, 0f, ROW_PAD * 8, 0f)
             bT.add(startGameButton).padBottom(ROW_PAD).row()
             bT.add(aboutButton).padBottom(ROW_PAD).row()
-            bT.add(Table().also { gpT ->
-                gpT.add(settingsButton).padRight(ROW_PAD)
-                gpT.add(feedbackButton).padRight(ROW_PAD)
-                gpT.add(leaderboardButton).padRight(ROW_PAD)
-                gpT.add(achievementsButton)
-            }).padBottom(ROW_PAD).row()
+            bT.add(settingsButton).padBottom(ROW_PAD).row()
             bT.add(highScoreLabel).row()
             bT.add(penMouseSAdButton).padTop(ROW_PAD * 1.5f).row()
-        }).expandY().align(Align.top).row()
-
-        cT.add().minHeight(50f).expandY()
+        }).expand().top().padTop(50f)
     }
 
-    private fun onPgsAuthChanged(isAuthenticated: Boolean) {
-        Gdx.app.log(TAG, "PGS auth changed: $isAuthenticated")
-        leaderboardButton.isDisabled = !isAuthenticated
-        achievementsButton.isDisabled = !isAuthenticated
+    private fun onPgsAuthChanged(pgsAuthEnabled: Boolean) {
+        leaderboardButton.isDisabled = !pgsAuthEnabled
+        achievementsButton.isDisabled = !pgsAuthEnabled
     }
 
     override fun keyDown(keyCode: Int) = if (keyCode == Input.Keys.BACK) {
@@ -220,8 +177,7 @@ class MainMenuStage : ScreenWithUIStage.ScreenStage() {
 
     companion object {
         private const val TAG = "MainMenuStage"
-
-        private const val ROW_PAD = 15f
-        private const val ROW_PAD_S = 10f
+        private const val ROW_PAD = 25f
+        private const val FONT_SCALE = 1f
     }
 }

@@ -15,4 +15,12 @@ class PlayServicesHelperDesktopImpl: PlayServicesHelper {
     override fun showAchievements() = Unit
     override fun unlockAchievement(id: String) = Unit
     override fun signIn() = Unit
+
+    override fun getUserName(callback: (String?) -> Unit) {
+        callback("Player")
+    }
+
+    override fun getGamerProfilePicture(callback: (ByteArray?) -> Unit) {
+        callback(null)
+    }
 }

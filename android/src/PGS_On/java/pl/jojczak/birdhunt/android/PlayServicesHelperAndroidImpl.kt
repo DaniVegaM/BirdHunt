@@ -89,6 +89,29 @@ class PlayServicesHelperAndroidImpl(
             }
     }
 
+    override fun getGamerProfilePicture(callback: (ByteArray?) -> Unit) {
+        if (!checkIsAuthenticatedViaPreferences(false)) return callback(null)
+
+        PlayGames.getPlayersClient(activity).currentPlayer
+            .addOnSuccessListener { player ->
+                player.iconImageUri?.let { uri ->
+                    try {
+                        activity.contentResolver.openInputStream(uri)?.use { input ->
+                            callback(input.readBytes())
+                            return@addOnSuccessListener
+                        }
+                    } catch (e: Exception) {
+                        Gdx.app.error(TAG, "Failed to read profile picture", e)
+                    }
+                }
+                callback(null)
+            }
+            .addOnFailureListener { exception ->
+                Gdx.app.error(TAG, "Failed to get profile picture", exception)
+                callback(null)
+            }
+    }
+
     private fun checkIsAuthenticatedViaPreferences(showError: Boolean): Boolean {
         return if (!Preferences.get(PREF_PGS_AUTH)) {
             Gdx.app.log(TAG, "Not authenticated")
